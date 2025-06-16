@@ -1,0 +1,19 @@
+﻿<Project Sdk="hamarb123.ProjectSdk/1.0.47">
+	<PropertyGroup>
+		<TargetFrameworks>net6.0;net8.0;net9.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<GenerateVersionCodeCustom>false</GenerateVersionCodeCustom>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\hamarb123.ByRefHandles\hamarb123.ByRefHandles.csproj" />
+		<PackageReference Include="coverlet.collector" Version="6.0.2" />
+		<PackageReference Include="Microsoft.DotNet.RemoteExecutor" Version="9.0.*-*" />
+		<PackageReference Update="Microsoft.DotNet.RemoteExecutor" Condition=" '$(TargetFramework)' == 'net6.0' " Version="6.0.*-*" />
+		<PackageReference Update="Microsoft.DotNet.RemoteExecutor" Condition=" '$(TargetFramework)' == 'net8.0' " Version="8.0.*-*" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+		<PackageReference Include="xunit" Version="2.9.2" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+	</ItemGroup>
+</Project>

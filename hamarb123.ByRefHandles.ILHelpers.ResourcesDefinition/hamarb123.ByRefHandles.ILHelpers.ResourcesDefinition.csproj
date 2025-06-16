@@ -1,0 +1,8 @@
+<Project Sdk="hamarb123.ProjectSdk/1.0.47">
+	<Import Project="..\hamarb123.ByRefHandles.ProjectImpl\Sdk\SharedProjectProperties.props" />
+	<Import Project="..\hamarb123.ByRefHandles.ProjectImpl\Sdk\SharedILProjectProperties.props" />
+
+	<PropertyGroup>
+		<AssemblyName>hamarb123.ByRefHandles.ILHelpers</AssemblyName>
+	</PropertyGroup>
+</Project>

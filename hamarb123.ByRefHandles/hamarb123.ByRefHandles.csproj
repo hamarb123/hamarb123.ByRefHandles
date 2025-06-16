@@ -1,0 +1,27 @@
+﻿<Project Sdk="hamarb123.ProjectSdk/1.0.47">
+	<Import Project="..\hamarb123.ByRefHandles.ProjectImpl\Sdk\SharedProjectProperties.props" />
+
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net7.0'))">true</IsAotCompatible>
+		<IsTrimmable>true</IsTrimmable>
+		<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\hamarb123.ByRefHandles.ILHelpers\hamarb123.ByRefHandles.ILHelpers.ilproj" PrivateAssets="$(SetPrivateAssets)" />
+		<PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Condition=" '$(TargetFramework)' == 'net462' " Version="4.3.0" />
+		<PackageReference Include="System.ValueTuple" Condition=" '$(TargetFramework)' == 'net462' " Version="4.6.1" />
+		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Condition=" '$(TargetFramework)' == 'net462' OR '$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netstandard2.1' " Version="6.1.2" />
+		<PackageReference Include="System.Runtime.CompilerServices.Unsafe" Condition=" '$(TargetFramework)' == 'netcoreapp3.1' OR '$(TargetFramework)' == 'net5.0' " Version="6.0.0" />
+		<PackageReference Include="Microsoft.Bcl.HashCode" Condition=" '$(TargetFramework)' == 'net462' OR '$(TargetFramework)' == 'netstandard2.0' " Version="6.0.0" />
+	</ItemGroup>
+
+	<Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+		<ItemGroup>
+			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
+		</ItemGroup>
+	</Target>
+</Project>
