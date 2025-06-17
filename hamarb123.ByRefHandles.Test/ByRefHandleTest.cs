@@ -7,7 +7,7 @@ namespace hamarb123.ByRefHandles.Test;
 
 public class ByRefHandleTest
 {
-	private static RemoteInvokeOptions CreateRemoteInvokeOptions(bool large)
+	private static RemoteInvokeOptions CreateRemoteInvokeOptions(bool large, bool smallHelperOnly)
 	{
 		// Run all tests under GCStress mode 0xF (unless it would take too long, in which case we use 0xE for those large cases).
 		// See https://github.com/dotnet/runtime/blob/main/docs/design/coreclr/jit/investigate-stress.md about gc stress mode.
@@ -18,25 +18,29 @@ public class ByRefHandleTest
 			{
 				EnvironmentVariables =
 				{
-					{ "DOTNET_GCStress", large ? "0xE" : "0xF" }
-				}
-			}
+					{ "DOTNET_GCStress", large ? "0xE" : "0xF" },
+				},
+			},
+			RuntimeConfigurationOptions =
+			{
+				{ "hamarb123.ByRefHandles.PinnedByRefHandle.OnlyUseSmallHelper", smallHelperOnly },
+			},
 		};
 	}
 
-	private static void Run(Func<int> func, bool large = false)
+	private static void Run(Func<int> func, bool large = false, bool smallHelperOnly = false)
 	{
-		RemoteExecutor.Invoke(func, CreateRemoteInvokeOptions(large)).Dispose();
+		RemoteExecutor.Invoke(func, CreateRemoteInvokeOptions(large, smallHelperOnly)).Dispose();
 	}
 
-	private static void Run(Func<Task<int>> func, bool large = false)
+	private static void Run(Func<Task<int>> func, bool large = false, bool smallHelperOnly = false)
 	{
-		RemoteExecutor.Invoke(func, CreateRemoteInvokeOptions(large)).Dispose();
+		RemoteExecutor.Invoke(func, CreateRemoteInvokeOptions(large, smallHelperOnly)).Dispose();
 	}
 
-	private static void Run(Func<string, int> func, string arg, bool large = false)
+	private static void Run(Func<string, int> func, string arg, bool large = false, bool smallHelperOnly = false)
 	{
-		RemoteExecutor.Invoke(func, arg, CreateRemoteInvokeOptions(large)).Dispose();
+		RemoteExecutor.Invoke(func, arg, CreateRemoteInvokeOptions(large, smallHelperOnly)).Dispose();
 	}
 
 	public class AllocateFreeNull
@@ -184,9 +188,15 @@ public class ByRefHandleTest
 		public void MultiThreadCreateUpdateDestroy() => Run(Tests.MultiThreadCreateUpdateDestroy);
 
 		[Fact]
+		public void MultiThreadCreateUpdateDestroySmallHelperOnly() => Run(Tests.MultiThreadCreateUpdateDestroySmallHelperOnly, false, true);
+
+		[Fact]
 		public void MultiThreadCreateDestroy_LargeMode() => Run(Tests.MultiThreadCreateDestroy, true);
 
 		[Fact]
 		public void MultiThreadCreateUpdateDestroy_LargeMode() => Run(Tests.MultiThreadCreateUpdateDestroy, true);
+
+		[Fact]
+		public void MultiThreadCreateUpdateDestroySmallHelperOnly_LargeMode() => Run(Tests.MultiThreadCreateUpdateDestroySmallHelperOnly, true, true);
 	}
 }

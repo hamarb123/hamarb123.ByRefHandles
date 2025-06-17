@@ -642,4 +642,117 @@ public static class Tests
 		foreach (var thread in threads) thread.Join();
 		return 42;
 	}
+
+	public static int MultiThreadCreateUpdateDestroySmallHelperOnly()
+	{
+		// Variant of MultiThreadCreateUpdateDestroy, except it's run with only the small helper
+
+		// Allow up to 2048 to exist at once, and have 8192 slots (in seperate arrays) to pick from.
+		// Create a queue to store our current handles.
+		SemaphoreSlim maxAtOnce = new(1 << 11, 1 << 11);
+		ConcurrentQueue<(PinnedByRefHandle<int> Handle, int Index)> queue = [];
+		int[][] arrays = [.. Enumerable.Range(0, 1 << 13).Select((x) => new int[1])];
+
+		List<Thread> threads = [];
+		for (int i = 0; i < 3; i++)
+		{
+			int _i = i;
+			Thread t1 = new(() =>
+			{
+				// Creating thread
+				try
+				{
+					Random r = new(_i * 3 + 1);
+					var start = Stopwatch.GetTimestamp();
+					var endAt = start + Stopwatch.Frequency * 4;
+					while (Stopwatch.GetTimestamp() < endAt)
+					{
+						for (int i = 0; i < 256; i++)
+						{
+							// Wait until we can make one w/o exceeding our limit (or exit this loop if not w/i 1ms)
+							if (!maxAtOnce.Wait(1)) break;
+
+							// Create a handle and add it to the queue
+							var idx = r.Next(arrays.Length);
+							PinnedByRefHandle<int> handle = new(ref arrays[idx][0]);
+							queue.Enqueue((handle, idx));
+						}
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex.ToString());
+					Environment.Exit(40);
+				}
+			});
+			Thread t2 = new(() =>
+			{
+				// Destroying thread
+				try
+				{
+					Thread.Sleep(_i * 20); // Start these somewhat gradually
+					Random r = new(_i * 3 + 2);
+					var start = Stopwatch.GetTimestamp();
+					var endAt = start + Stopwatch.Frequency * 4;
+					while (Stopwatch.GetTimestamp() < endAt)
+					{
+						for (int i = 0; i < 256; i++)
+						{
+							if (queue.TryDequeue(out var inst))
+							{
+								// Check if the ref points to where it's meant to, then release it
+								Assert.True(Unsafe.AreSame(ref inst.Handle.Target, ref arrays[inst.Index][0]));
+								inst.Handle.Dispose();
+								maxAtOnce.Release();
+							}
+						}
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex.ToString());
+					Environment.Exit(41);
+				}
+			});
+			Thread t3 = new(() =>
+			{
+				// Updating thread
+				try
+				{
+					Random r = new(_i * 3 + 3);
+					var start = Stopwatch.GetTimestamp();
+					var endAt = start + Stopwatch.Frequency * 4;
+					while (Stopwatch.GetTimestamp() < endAt)
+					{
+						for (int i = 0; i < 256; i++)
+						{
+							if (queue.TryDequeue(out var inst))
+							{
+								// Check if the ref points to where it's meant to, then update which one it points into & re-add it
+								Assert.True(Unsafe.AreSame(ref inst.Handle.Target, ref arrays[inst.Index][0]));
+								var idx = r.Next(arrays.Length);
+								inst.Handle.SetTarget(ref arrays[idx][0]);
+								queue.Enqueue((inst.Handle, idx));
+							}
+						}
+					}
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex.ToString());
+					Environment.Exit(43);
+				}
+			});
+			t1.Start();
+			t2.Start();
+			t3.Start();
+			threads.Add(t1);
+			threads.Add(t2);
+			threads.Add(t3);
+		}
+
+		// Wait until all exit
+		foreach (var thread in threads) thread.Join();
+		return 42;
+	}
 }

@@ -26,10 +26,31 @@ internal partial class Impl
 	private static nuint _numPotentialPins = 0; // Number of pin handles we can allocate at once without creating more instances
 	private static nuint _numActivePins = 0; // Number of pin handles we currently have allocated at once
 
+	// Config option that allows the larger helpers to be trimmed
+	private static class Config
+	{
+		public static bool OnlyUseSmallHelper { get; } = GetConfigValue("hamarb123.ByRefHandles.PinnedByRefHandle.OnlyUseSmallHelper", false);
+		public static bool OnlyUseMediumHelper { get; } = GetConfigValue("hamarb123.ByRefHandles.PinnedByRefHandle.OnlyUseMediumHelper", false);
+		private static bool GetConfigValue(string name, bool defaultValue) => AppContext.TryGetSwitch(name, out var value) ? value : defaultValue;
+	}
+
 	// Creates an ILHelpers.Helper based on the amount of impls currenty created
 	// Caller must be holding the _globalLock lock
 	private static ILHelpers.Helper SelectHelper(out uint size)
 	{
+		// Check config values
+		if (Config.OnlyUseSmallHelper)
+		{
+			size = 64;
+			return new ILHelpers.Helper64();
+		}
+		else if (Config.OnlyUseMediumHelper)
+		{
+			size = 4096;
+			return new ILHelpers.Helper4096();
+		}
+
+		// Otherwise, automatically select
 		if (_numImpls == 0)
 		{
 			// Make a 64 size instance for the first one
