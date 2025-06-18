@@ -48,7 +48,7 @@ static Task UseSpanInAsync(Span<int> x)
 		// Async boundary
 		await Task.Yield();
 
-		// Set first element to 21 instead
+		// Set first element to 21
 		reference = ref holder.Handle.Target;
 		GC.KeepAlive(holder);
 		MemoryMarshal.CreateSpan(ref reference, length)[0] = 21;
