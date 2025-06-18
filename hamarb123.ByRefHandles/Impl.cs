@@ -259,6 +259,7 @@ internal unsafe sealed partial class Impl : ILHelpers.Helper<Impl.State>
 	public unsafe override ref byte Command(ref State state, out nuint slot, Span<ulong> usedSlots, ref ushort usedSlotsFreeListSize, Span<ushort> usedSlotsFreeList, Span<nuint> pointerValues)
 	{
 		// Signal the caller that we've successfully saved & pinned their byref if we need to
+		// (this happens when we re-call this method for the last call).
 		if (state.ShouldSignalCompletionOnCommand)
 		{
 			Signal(&_pState->EndSignalValue, (_managedState as ManagedState)?._managedEndSignal);
@@ -328,7 +329,8 @@ internal unsafe sealed partial class Impl : ILHelpers.Helper<Impl.State>
 		return (low == 0) ? TrailingZeroCount((uint)(value >>> 32)) : TrailingZeroCount(low);
 	}
 
-	// Based on: https://github.com/dotnet/runtime/blob/ec11903827fc28847d775ba17e0cd1ff56cfbc2e/src/libraries/Microsoft.Bcl.Memory/src/Polyfills/System.Numerics.BitOperations.netstandard20.cs
+	// This section (TrailingZeroCount stuff) is based on: https://github.com/dotnet/runtime/blob/ec11903827fc28847d775ba17e0cd1ff56cfbc2e/src/libraries/Microsoft.Bcl.Memory/src/Polyfills/System.Numerics.BitOperations.netstandard20.cs.
+	// Licensed for use under MIT.
 
 	private static ReadOnlySpan<byte> TrailingZeroCountDeBruijn => // 32
 	[
@@ -502,6 +504,12 @@ internal unsafe sealed partial class Impl : ILHelpers.Helper<Impl.State>
 		}
 
 		// Shrink helper
-		Shrink(impl);
+		Shrink(impl, false);
+	}
+
+	// Internal helper to trim threads
+	public static void TrimThreads()
+	{
+		Shrink(null, true);
 	}
 }

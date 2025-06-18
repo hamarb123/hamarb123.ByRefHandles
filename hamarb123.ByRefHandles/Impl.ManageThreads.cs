@@ -78,7 +78,7 @@ internal partial class Impl
 #if NET7_0_OR_GREATER
 	private static nuint GetImitationMaxSlots() => nuint.Min(_numPotentialPins, _numImpls switch
 #else
-	private static nuint GetImitationMaxSlots() => (nuint)Math.Min((ulong)_numPotentialPins, _numImpls switch
+	private static nuint GetImitationMaxSlots() => (nuint)Math.Min(_numPotentialPins, _numImpls switch
 #endif
 	{
 		1 => 64,
@@ -96,9 +96,6 @@ internal partial class Impl
 		lock (_globalLock)
 		{
 			// Increment active count
-#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
-			[DoesNotReturn]
-#endif
 			static void Throw() => throw new
 #if NET7_0_OR_GREATER
 				UnreachableException
@@ -111,12 +108,14 @@ internal partial class Impl
 			Impl result;
 
 			// Create a new impl if we are using at least half of the imitatation max slots, or if there are no free slots at all
-			if ((_numImpls < _impls.Length && _numActivePins * 2 > GetImitationMaxSlots()) || (_numImpls - _numFullImpls == 0))
+			if ((_numImpls < _impls.Length && _numActivePins * 2 > GetImitationMaxSlots()) || (_numImpls == _numFullImpls))
 			{
 				// Instantiate new instance & start the thread asap (as that's the slowest thing we have to wait for)
 				result = new();
 				ILHelpers.Helper helper = SelectHelper(out var size);
-				result._arrayPool = ArrayPool<ulong>.Shared.Rent((int)helper.RequiredPooledAllocSize());
+				var poolAllocSize = helper.RequiredPooledAllocSize();
+				Debug.Assert(poolAllocSize == (int)poolAllocSize);
+				result._arrayPool = ArrayPool<ulong>.Shared.Rent((int)poolAllocSize);
 				if (_numPotentialPins + size < size) Throw();
 				if (_numImpls == 1 << 30) Throw();
 				static ThreadStart CreateThreadLambda(Impl impl, ILHelpers.Helper helper) => () =>
@@ -139,8 +138,7 @@ internal partial class Impl
 				if (_numImpls > _impls.Length)
 				{
 					Debug.Assert(_numImpls - _numFullImpls == 1);
-					_impls.AsSpan().Clear();
-					ArrayPool<Impl?>.Shared.Return(_impls);
+					ArrayPool<Impl?>.Shared.Return(_impls, clearArray: true);
 					_impls = ArrayPool<Impl?>.Shared.Rent(Math.Max((_numImpls - 1) * 2, 16));
 					_impls.AsSpan().Clear();
 				}
@@ -203,7 +201,7 @@ internal partial class Impl
 	}
 
 	// We do all the global state operations of shrinking here
-	private static unsafe void Shrink(Impl justReduced)
+	private static unsafe void Shrink(Impl? justReduced, bool aggressive)
 	{
 		// NOTE: there is a race condition, that we are intentionally ignoring, due to the way this function is called:
 		// Theoretically, you could end up creating a new instance unnecessarily due to the UsedSlots & friends info not
@@ -219,20 +217,20 @@ internal partial class Impl
 		lock (_globalLock)
 		{
 			// Used slot info, and if required, update relevant global counters if needed, and add impl back into the _impls buffer at the end, if it just got reduced from full
-			if (justReduced._pState->UsedSlots-- == justReduced._pState->MaxFreeSlots) _impls[_numImpls - _numFullImpls--] = justReduced;
-			if (justReduced._pState->UsedSlots == 0) _numEmptyImpls++;
+			if (justReduced != null)
+			{
+				if (justReduced._pState->UsedSlots-- == justReduced._pState->MaxFreeSlots) _impls[_numImpls - _numFullImpls--] = justReduced;
+				if (justReduced._pState->UsedSlots == 0) _numEmptyImpls++;
 
-			// Update active pin count
-			_numActivePins--;
+				// Update active pin count
+				_numActivePins--;
+			}
 
 			// Shrink by half if we're wasting 75% or more
-			if (_numEmptyImpls >= _numImpls / 4 * 3 && _numImpls > 16)
+			if (aggressive ? (_numEmptyImpls > 0) : (_numEmptyImpls >= _numImpls / 4 * 3 && _numImpls > 16))
 			{
-				// Assertions
-				Debug.Assert(justReduced._pState->UsedSlots == 0);
-
 				// Allocate a new buffer, and clear it
-				Impl?[] newArr = ArrayPool<Impl?>.Shared.Rent(Math.Max(_numImpls / 2, 16));
+				Impl?[] newArr = ArrayPool<Impl?>.Shared.Rent(Math.Max(aggressive ? (_numImpls - _numEmptyImpls) : (_numImpls / 2), 16));
 				newArr.AsSpan().Clear();
 
 				// Keep all which are currently partially in use, also calculate newNumPotentialPins
@@ -261,7 +259,7 @@ internal partial class Impl
 				newArr[idx++] = justReduced;
 
 				// Fill rest of the array, EXCLUDING slots reserved for full impl values, until it gets full, then release any remaining impls that can't fit
-				var emptyCount = 1;
+				var emptyCount = (justReduced != null && justReduced._pState->UsedSlots == 0) ? 1 : 0;
 				var numFullImpls = _numFullImpls;
 				for (int i = 0; i < implsToConsider; i++)
 				{
@@ -276,7 +274,7 @@ internal partial class Impl
 					if (inst == justReduced) continue;
 
 					// Check if there's more space available in newArr, if so, use it
-					if (idx + numFullImpls < newArr.Length)
+					if (!aggressive && idx + numFullImpls < newArr.Length)
 					{
 						emptyCount++;
 						newArr[idx++] = inst;
@@ -304,8 +302,7 @@ internal partial class Impl
 				}
 
 				// Clear the old array (so we don't root memory longer than it needs to be rooted for), return it to the pool, and replace it
-				_impls.AsSpan().Clear();
-				ArrayPool<Impl?>.Shared.Return(_impls);
+				ArrayPool<Impl?>.Shared.Return(_impls, clearArray: true);
 				_impls = newArr;
 
 				// Update all the counts
