@@ -17,11 +17,11 @@ If you don't understand the concerns I laid out above, then you probably shouldn
 
 ## Configuration
 
-The following `AppContext` variables are available (primarily, to enable better trimming if desired):
+The following `AppContext` variables are available (primarily to enable better trimming if desired):
 - `hamarb123.ByRefHandles.PinnedByRefHandle.OnlyUseSmallHelper` (`bool`): when set to `true`, only uses the smallest helper (64 slots currently)
 - `hamarb123.ByRefHandles.PinnedByRefHandle.OnlyUseMediumHelper` (`bool`): when set to `true`, only uses the medium-sized helper (4096 slots currently)
 
-## Example Usage:
+## Example Usage
 ```csharp
 using hamarb123.ByRefHandles;
 using System.Runtime.InteropServices;
