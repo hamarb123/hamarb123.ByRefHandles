@@ -15,6 +15,12 @@ The library is tested in [GC Hole Stress](https://github.com/dotnet/runtime/blob
 
 If you don't understand the concerns I laid out above, then you probably shouldn't be using this library.
 
+## Configuration
+
+The following `AppContext` variables are available (primarily, to enable better trimming if desired):
+- `hamarb123.ByRefHandles.PinnedByRefHandle.OnlyUseSmallHelper` (`bool`): when set to `true`, only uses the smallest helper (64 slots currently)
+- `hamarb123.ByRefHandles.PinnedByRefHandle.OnlyUseMediumHelper` (`bool`): when set to `true`, only uses the medium-sized helper (4096 slots currently)
+
 ## Example Usage:
 ```csharp
 using hamarb123.ByRefHandles;
