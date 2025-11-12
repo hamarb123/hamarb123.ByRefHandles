@@ -13,7 +13,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-13, windows-latest]
+        os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
         framework: ['8.0', '9.0', '10.0']
         config: [Debug, Release]
     runs-on: ${{ matrix.os }}
@@ -28,8 +28,8 @@ jobs:
       with:
         dotnet-version: 10.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore -c ${{ matrix.config }} -f net${{ matrix.framework }}
     - name: Build
-      run: dotnet build --no-restore -c ${{ matrix.config }}
+      run: dotnet build --no-restore -c ${{ matrix.config }} -f net${{ matrix.framework }}
     - name: Test
       run: dotnet test --no-build --verbosity normal -c ${{ matrix.config }} -f net${{ matrix.framework }}
