@@ -1,4 +1,4 @@
-<Project Sdk="hamarb123.ProjectSdk/1.0.47">
+<Project Sdk="hamarb123.ProjectSdk/1.0.48">
 	<Import Project="..\hamarb123.ByRefHandles.ProjectImpl\Sdk\SharedProjectProperties.props" />
 	<Import Project="..\hamarb123.ByRefHandles.ProjectImpl\Sdk\SharedILProjectProperties.props" />
 

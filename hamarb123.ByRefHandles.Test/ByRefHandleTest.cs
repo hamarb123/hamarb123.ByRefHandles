@@ -13,7 +13,7 @@ public class ByRefHandleTest
 		// See https://github.com/dotnet/runtime/blob/main/docs/design/coreclr/jit/investigate-stress.md about gc stress mode.
 		return new RemoteInvokeOptions()
 		{
-			TimeOut = RemoteExecutor.FailWaitTimeoutMilliseconds * (large ? 3 : 1),
+			TimeOut = RemoteExecutor.FailWaitTimeoutMilliseconds * (large ? 4 : 1),
 			StartInfo = new ProcessStartInfo()
 			{
 				EnvironmentVariables =

@@ -1,7 +1,7 @@
-﻿<Project Sdk="hamarb123.ProjectSdk/1.0.47">
+﻿<Project Sdk="hamarb123.ProjectSdk/1.0.48">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<GenerateVersionCodeCustom>false</GenerateVersionCodeCustom>

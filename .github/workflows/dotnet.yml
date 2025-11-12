@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, macos-13, windows-latest]
-        framework: ['6.0', '8.0', '9.0']
+        framework: ['6.0', '8.0', '9.0', '10.0']
         config: [Debug, Release]
     runs-on: ${{ matrix.os }}
     steps:
@@ -23,10 +23,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ matrix.framework }}.x
-    - name: Setup .NET 9.0 SDK
+    - name: Setup .NET 10.0 SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 10.0.x
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
