@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
-        framework: ['8.0', '9.0', '10.0']
+        framework: ['6.0', '8.0', '9.0', '10.0']
         config: [Debug, Release]
     runs-on: ${{ matrix.os }}
     steps:
