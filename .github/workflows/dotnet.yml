@@ -27,6 +27,8 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+    - name: Restore dependencies for IL generator
+      run: dotnet restore hamarb123.ByRefHandles.ILHelpers.Generator/hamarb123.ByRefHandles.ILHelpers.Generator.csproj
     - name: Build
       run: dotnet build -c ${{ matrix.config }} -f net${{ matrix.framework }}
     - name: Test
